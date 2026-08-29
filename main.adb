@@ -27,24 +27,22 @@ procedure Main is
             -- 接收目標樓層指令
             accept Move_To (Target : Floor_Type) do
                Target_Floor := Target;
-            end Move_To;
-
-            Put_Line ("[Elevator] Moving to" & Target_Floor'Image & " Floor");
+               Put_Line ("[Elevator] Moving to" & Target_Floor'Image & " Floor");
 
             -- 模擬電梯移動過程
-            while Current_Floor /= Target_Floor loop
-               delay 1.0; -- 移動每層樓耗時 1 秒
+               while Current_Floor /= Target_Floor loop
+                  delay 1.0; -- 移動每層樓耗時 1 秒
 
-               if Current_Floor < Target_Floor then
-                  Current_Floor := Current_Floor + 1;
-                  Put_Line ("[Elevator] uping... Now Floor:" & Current_Floor'Image);
-               else
-                  Current_Floor := Current_Floor - 1;
-                  Put_Line ("[Elevator] downing... Now Floor:" & Current_Floor'Image);
-               end if;
-            end loop;
-
-            Put_Line ("[Elevator] Get to" & Current_Floor'Image & " Floor,Door Open");
+                  if Current_Floor < Target_Floor then
+                     Current_Floor := Current_Floor + 1;
+                     Put_Line ("[Elevator] uping... Now Floor:" & Current_Floor'Image);
+                  else
+                     Current_Floor := Current_Floor - 1;
+                     Put_Line ("[Elevator] downing... Now Floor:" & Current_Floor'Image);
+                  end if;
+               end loop;
+               Put_Line ("[Elevator] Get to" & Current_Floor'Image & " Floor,Door Open");
+            end Move_To;
 
          or
             -- 接收停止訊號

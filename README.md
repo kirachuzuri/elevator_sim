@@ -20,4 +20,5 @@
    gnatmake main.adb
 
 ## 版本更新資訊
+v0.03，修正Control Menu在輸入數字完後才出現的bug
 v0.02，新增用戶可選擇樓層，選擇0則退出
