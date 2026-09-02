@@ -7,6 +7,8 @@ procedure Main is
 
    -- 自訂強型別樓層範圍
    type Floor_Type is range 1 .. 10;
+   -- 記錄哪些樓層被按了 (True 表示該樓層有請求)
+   type Request_Array is array (Floor_Type) of Boolean;
 
    -- 定義Task規格
    task Elevator_Task is
@@ -16,9 +18,22 @@ procedure Main is
 
    -- 定義Task實作
    task body Elevator_Task is
-      Current_Floor : Floor_Type := 1;
-      Target_Floor  : Floor_Type := 1;
-      Is_Running    : Boolean    := True;
+      Current_Floor : Floor_Type    := 1;
+      Is_Running    : Boolean       := True;
+      Requests      : Request_Array := (others => False);
+      Direction     : Integer       := 0; -- 1: 向上, -1: 向下, 0: 靜止
+
+      -- 檢查是否還有任何未處理的樓層請求
+      function Has_Requests return Boolean is
+      begin
+         for F in Floor_Type loop
+            if Requests(F) then
+               return True;
+            end if;
+         end loop;
+         return False;
+      end Has_Requests;
+
    begin
       Put_Line ("[Elevator] Ready at Floor 1");
 
@@ -26,37 +41,63 @@ procedure Main is
          select
             -- 接收目標樓層指令
             accept Move_To (Target : Floor_Type) do
-               Target_Floor := Target;
-               Put_Line ("[Elevator] Moving to" & Target_Floor'Image & " Floor");
-
-            -- 模擬電梯移動過程
-               while Current_Floor /= Target_Floor loop
-                  delay 1.0; -- 移動每層樓耗時 1 秒
-
-                  if Current_Floor < Target_Floor then
-                     Current_Floor := Current_Floor + 1;
-                     Put_Line ("[Elevator] uping... Now Floor:" & Current_Floor'Image);
-                  else
-                     Current_Floor := Current_Floor - 1;
-                     Put_Line ("[Elevator] downing... Now Floor:" & Current_Floor'Image);
-                  end if;
-               end loop;
-               Put_Line ("[Elevator] Get to" & Current_Floor'Image & " Floor,Door Open");
+               Requests(Target) := True;
+               Put_Line ("[Elevator] Floor" & Target'Image & " requested.");
             end Move_To;
-
          or
             -- 接收停止訊號
             accept Stop do
                Is_Running := False;
-            end Stop; 
-            Put_Line ("[Elevator] System closed");
+            end Stop;
+         else
+            null;
          end select;
+
+         -- 電梯移動邏輯
+         if Requests(Current_Floor) then
+            Requests(Current_Floor) := False;
+            Put_Line ("[Elevator] Arrived at Floor" & Current_Floor'Image & ", Door Opened.");
+         end if;
+
+         if Has_Requests then
+            -- 簡單判定移動方向：若沒有方向，找第一個有請求的方向
+            if Direction = 0 then
+               for F in Floor_Type loop
+                  if Requests(F) then
+                     if F > Current_Floor then
+                        Direction := 1;
+                     elsif F < Current_Floor then
+                        Direction := -1;
+                     end if;
+                     exit;
+                  end if;
+               end loop;
+            end if;
+
+            -- 模擬移動耗時 1 秒
+            delay 1.0;
+
+            -- 依照方向移動一層樓
+            if Direction = 1 and Current_Floor < Floor_Type'Last then
+               Current_Floor := Current_Floor + 1;
+               Put_Line ("[Elevator] Going up... Now at Floor:" & Current_Floor'Image);
+            elsif Direction = -1 and Current_Floor > Floor_Type'First then
+               Current_Floor := Current_Floor - 1;
+               Put_Line ("[Elevator] Going down... Now at Floor:" & Current_Floor'Image);
+            end if;
+         else
+            -- 完全沒有請求時，電梯靜止
+            Direction := 0;
+            delay 0.2; -- 避免無謂的 CPU 滿載迴圈
+         end if;
+
       end loop;
+      Put_Line ("[Elevator] System closed");
    end Elevator_Task;
 
    Input_Choice : Integer;
    User_Target  : Floor_Type;
--- 主程式執行區塊
+   -- 主程式執行區塊
 begin
    loop
       New_Line;
